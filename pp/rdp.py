@@ -34,19 +34,6 @@ class RDP(object):
         self.line_x = [self.lines[i].x for i in range(len(self.lines))]
         self.line_y = [self.lines[i].y for i in range(len(self.lines))]
 
-    def show(self):
-        plt.plot(range(len(self.close)), self.close, c='b')
-        plt.plot(self.line_x, self.line_y, c='r')
-        plt.show()
-
-    def render_png(self, pngfile):
-        fig = Figure()
-        subplot = fig.add_subplot(111)
-        subplot.plot(range(len(self.close)), self.close, c='b')
-        subplot.plot(self.line_x, self.line_y, c='r')
-        canvas = FigureCanvasAgg(fig)
-        canvas.print_png(pngfile)
-
     def douglas_peucker(self, points, eps):
         """
         eps: 當線段上每個點距離這條線都小於eps時, 則認為這一條線就是趨勢線. 否則以距離最大的點為分隔點, 分成左右兩組繼續往下找
@@ -71,4 +58,21 @@ class RDP(object):
             lines.append(points[-1])
 
         return lines
+
+    def render(self, ax):
+        ax.plot(range(len(self.close)), self.close, c='b')
+        ax.plot(self.line_x, self.line_y, c='r')
+
+    def show(self):
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        self.render(ax)
+        plt.show()
+
+    def render_png(self, pngfile):
+        fig = Figure()
+        ax = fig.add_subplot(111)
+        self.render(ax)
+        canvas = FigureCanvasAgg(fig)
+        canvas.print_png(pngfile)
 
