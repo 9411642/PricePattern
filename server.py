@@ -12,7 +12,8 @@ import os
 import logging
 import traceback
 import tempfile
-from pp import rdp, kdata
+import numpy as np
+from pp import rdp, kdata, zigzag
 
 
 @route('/')
@@ -31,7 +32,7 @@ def handle_rdp():
     http://<server>/api/rdp?id=2330.TW&start=20100101&end=20151231&eps=5
     """
     try:
-        sid, start_date, end_date, eps = get_rdp_param(request)
+        sid, start_date, end_date, eps = get_param(request)
         logging.debug('sid=' + sid + ',start_date=' + str(start_date) + ',end_date=' + str(end_date) + ',eps=' + str(eps))
         klist = kdatasvc.getdata(sid, 8, start_date, end_date)
         r = rdp.RDP(klist, eps)
@@ -43,7 +44,26 @@ def handle_rdp():
         abort(500, e.message)
 
 
-def get_rdp_param(req):
+@route('/api/zigzag')
+def handle_zigzag():
+    """
+    http://<server>/api/zigzag?id=2330.TW&start=20100101&end=20151231&eps=5
+    """
+    try:
+        sid, start_date, end_date, eps = get_param(request)
+        logging.debug('sid=' + sid + ',start_date=' + str(start_date) + ',end_date=' + str(end_date) + ',eps=' + str(eps))
+        klist = kdatasvc.getdata(sid, 8, start_date, end_date)
+        X = kdatasvc.klist_to_nparray(klist)
+        pivots = zigzag.peak_valley_pivots(X, eps * 0.01, eps * -0.01)
+        png_file = get_temp_file()
+        zigzag.plot_zigzag(X, pivots, png_file)
+        return static_file(png_file, root="/", mimetype="image/png")
+    except Exception as e:
+        logging.error(traceback.format_exc())
+        abort(500, e.message)
+
+
+def get_param(req):
     sid = req.query.id or ''
     if not sid:
         raise ValueError('missing id parameter')
