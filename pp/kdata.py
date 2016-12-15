@@ -4,7 +4,7 @@
 """
 import requests
 from bs4 import BeautifulSoup
-
+import numpy as np
 
 class KBlock(object):
     """
@@ -43,4 +43,10 @@ class KDataSvc(object):
                  for x in items]
         return klist[::-1]
 
+    """
+    把K線資料轉成np array (只取close價格)
+    """
+    def klist_to_nparray(self, klist):
+        closeseries = [node.close for node in klist]
+        return np.array(closeseries)
 
