@@ -25,14 +25,34 @@ class Line(object):
     def dist(self, p):
         return abs(self.m * p.x - p.y + self.k) / sqrt(self.m ** 2 + 1)
 
+"""
+TODO: 改成function interface可能比較清楚一些
+
+- 讓user自己控制X的範圍, 可以是簡單的close序列, 也可以是自己scale
+- 支援numpy array
+
+lines = rdp(X, epsilon)
+plot_rdp(X, lines, filename)
+
+"""
+
 
 class RDP(object):
     def __init__(self, klist, epsilon):
-        self.close = [k.close for k in klist]
+        self.close = self.getpriceseries(klist)
         points = [Point(i, self.close[i]) for i in range(len(self.close))]
         self.lines = self.douglas_peucker(points, epsilon)
         self.line_x = [self.lines[i].x for i in range(len(self.lines))]
         self.line_y = [self.lines[i].y for i in range(len(self.lines))]
+
+    def getpriceseries(self, klist):
+        # 直接抽取close點
+        #
+        # return [node.close for node in klist]
+        max_value = max(node.close for node in klist)
+        min_value = min(node.close for node in klist)
+        scale_base = max(max_value - min_value, 1)
+        return [(node.close - min_value) * 100.0 / scale_base for node in klist]
 
     def douglas_peucker(self, points, eps):
         """
@@ -64,13 +84,13 @@ class RDP(object):
         ax.plot(self.line_x, self.line_y, c='r')
 
     def show(self):
-        fig = plt.figure()
+        fig = plt.figure(figsize=(12,9))
         ax = fig.add_subplot(111)
         self.render(ax)
         plt.show()
 
     def render_png(self, pngfile):
-        fig = Figure()
+        fig = Figure(figsize=(12,9))
         ax = fig.add_subplot(111)
         self.render(ax)
         canvas = FigureCanvasAgg(fig)
