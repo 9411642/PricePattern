@@ -16,8 +16,8 @@ from matplotlib.backends.backend_agg import FigureCanvasAgg
 PEAK, VALLEY = 1, -1
 
 
-def plot_zigzag(X, pivots, filename=''):
-    size = (12, 9)
+def plot_zigzag(X, pivots, width=8, height=6, filename=''):
+    size = (width, height)
     if filename:
         fig = Figure(figsize=size)
     else:

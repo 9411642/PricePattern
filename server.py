@@ -12,7 +12,6 @@ import os
 import logging
 import traceback
 import tempfile
-import numpy as np
 from pp import rdp, kdata, zigzag
 
 
@@ -56,7 +55,7 @@ def handle_zigzag():
         X = kdatasvc.klist_to_nparray(klist)
         pivots = zigzag.peak_valley_pivots(X, eps * 0.01, eps * -0.01)
         png_file = get_temp_file()
-        zigzag.plot_zigzag(X, pivots, png_file)
+        zigzag.plot_zigzag(X, pivots, filename=png_file)
         return static_file(png_file, root="/", mimetype="image/png")
     except Exception as e:
         logging.error(traceback.format_exc())
