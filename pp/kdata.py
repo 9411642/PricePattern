@@ -23,6 +23,15 @@ class KBlock(object):
             self.date, self.open, self.high, self.low, self.close, self.volume)
 
 
+def get_close_nparray(klist):
+    """
+    取出 klist (array of KBlock) 內的close price
+    :param klist: array of KBlock
+    :return: nparray of close
+    """
+    return np.array([node.close for node in klist])
+
+
 class KDataSvc(object):
     """
     提供K線查詢服務
@@ -42,11 +51,4 @@ class KDataSvc(object):
         klist = [KBlock(int(x['d']), float(x['o']), float(x['h']), float(x['l']), float(x['c']), float(x['v']))
                  for x in items]
         return klist[::-1]
-
-    """
-    把K線資料轉成np array (只取close價格)
-    """
-    def klist_to_nparray(self, klist):
-        closeseries = [node.close for node in klist]
-        return np.array(closeseries)
 

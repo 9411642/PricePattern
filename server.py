@@ -52,7 +52,7 @@ def handle_zigzag():
         sid, start_date, end_date, eps = get_param(request)
         logging.debug('sid=' + sid + ',start_date=' + str(start_date) + ',end_date=' + str(end_date) + ',eps=' + str(eps))
         klist = kdatasvc.getdata(sid, 8, start_date, end_date)
-        X = kdatasvc.klist_to_nparray(klist)
+        X = kdata.get_close_nparray(klist)
         pivots = zigzag.peak_valley_pivots(X, eps * 0.01, eps * -0.01)
         png_file = get_temp_file()
         zigzag.plot_zigzag(X, pivots, filename=png_file)
