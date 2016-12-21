@@ -10,6 +10,7 @@ from __future__ import print_function
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
+from matplotlib import collections as mc
 from matplotlib.backends.backend_agg import FigureCanvasAgg
 from pp import kdata
 
@@ -41,7 +42,7 @@ def _is_hs(X, pv_points, cur, delta):
 
     # E1必須是個max
     _, direction = pv_points[cur]
-    if direction != 1:
+    if direction != PEAK:
         return False
 
     # 接下來5個點的數值 = e1,e2,e3,e4,e5
@@ -78,7 +79,7 @@ def _is_ihs(X, pv_points, cur, delta):
 
     # E1必須是個min
     _, direction = pv_points[cur]
-    if direction != -1:
+    if direction != VALLEY:
         return False
 
     # 接下來5個點的數值 = e1,e2,e3,e4,e5
@@ -111,7 +112,7 @@ def _is_double_bottom(X, pv_points, cur, delta):
 
     # E1必須是個max
     _, direction = pv_points[cur]
-    if direction != 1:
+    if direction != PEAK:
         return False
 
     # 接下來5個點的數值 = e1,e2,e3,e4,e5
@@ -140,16 +141,16 @@ def _is_double_top(X, pv_points, cur, delta):
     if cur > len(pv_points) - 5:
         return False
 
-    # E1必須是個max
+    # E1必須是個min
     _, direction = pv_points[cur]
-    if direction != 1:
+    if direction != VALLEY:
         return False
 
     # 接下來5個點的數值 = e1,e2,e3,e4,e5
     e1, e2, e3, e4, e5 = X[[p[0] for p in pv_points[cur:cur+5]]]
 
-    # E3要比E1/E5低
-    if e3 > e1 or e3 > e5:
+    # E3要比E1/E5高
+    if e3 < e1 or e3 < e5:
         return False
 
     # E2/E4要接近
@@ -241,8 +242,13 @@ class Finder(object):
             fig = plt.figure(figsize=size)
         ax = fig.add_subplot(111)
         ax.set_xlim(-10, len(self.X)+10)
-        ax.set_ylim(self.X.min()*0.99, self.X.max()*1.01)
-        ax.plot(np.arange(len(self.X)), self.X, 'k:', alpha=0.7)
+        highs = [k.high for k in self.klist]
+        lows = [k.low for k in self.klist]
+        ax.set_ylim(min(lows)*0.99, max(highs)*1.01)
+        lines = [[(x, lows[x]), (x, highs[x])] for x in range(len(self.X))]
+        colors = [(0, 0, 0, 0.3) for x in range(len(self.X))]
+        lc = mc.LineCollection(lines, colors=colors)
+        ax.add_collection(lc)
         ax.plot(np.arange(len(self.X))[self.pivots != 0], self.X[self.pivots != 0], 'k-')
         if len(pattern) > 0:
             y = [self.X[i] for i in pattern]
