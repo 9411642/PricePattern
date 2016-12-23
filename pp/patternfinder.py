@@ -160,6 +160,94 @@ def _is_double_top(X, pv_points, cur, delta):
         _is_close_enough(e4, e24, delta)
 
 
+def _is_triple_bottom(X, pv_points, cur, delta):
+    """
+    Return true if 'cur'這個點是一個triple-bottom的pattern
+    :param X: array of close price
+    :param pv_points: pivot point, array of (index, direction)
+    :param cur: 目前的點
+    :param delta: E2/E4/E6, E3/E5的容忍範圍
+    :return: True or False
+    """
+    if cur > len(pv_points) - 7:
+        return False
+
+    # E1必須是個max
+    _, direction = pv_points[cur]
+    if direction != PEAK:
+        return False
+
+    # 接下來7個點的數值 = e1,e2,e3,e4,e5,e6,e7
+    e1, e2, e3, e4, e5, e6, e7 = X[[p[0] for p in pv_points[cur:cur+7]]]
+
+    # E3要比E1/E7低
+    if e3 > e1 or e3 > e7:
+        return False
+
+    # E5要比E1/E7低
+    if e5 > e1 or e5 > e7:
+        return False
+
+    # E2/E4/E6要接近
+    e246 = (e2 + e4 + e6)/3
+    if not _is_close_enough(e2, e246, delta) or \
+       not _is_close_enough(e4, e246, delta) or \
+       not _is_close_enough(e6, e246, delta):
+        return False
+
+    # E3/E5要接近
+    e35 = (e3 + e5) / 2
+    if not _is_close_enough(e3, e35, delta) or \
+       not _is_close_enough(e5, e35, delta):
+        return False
+
+    return True
+
+
+def _is_triple_top(X, pv_points, cur, delta):
+    """
+    Return true if 'cur'這個點是一個triple-top的pattern
+    :param X: array of close price
+    :param pv_points: pivot point, array of (index, direction)
+    :param cur: 目前的點
+    :param delta: E2/E4/E6, E3/E5的容忍範圍
+    :return: True or False
+    """
+    if cur > len(pv_points) - 7:
+        return False
+
+    # E1必須是個min
+    _, direction = pv_points[cur]
+    if direction != VALLEY:
+        return False
+
+    # 接下來7個點的數值 = e1,e2,e3,e4,e5,e6,e7
+    e1, e2, e3, e4, e5, e6, e7 = X[[p[0] for p in pv_points[cur:cur+7]]]
+
+    # E3要比E1/E7高
+    if e3 < e1 or e3 < e7:
+        return False
+
+    # E5要比E1/E7高
+    if e5 < e1 or e5 < e7:
+        return False
+
+    # E2/E4/E6要接近
+    e246 = (e2 + e4 + e6)/3
+    if not _is_close_enough(e2, e246, delta) or \
+       not _is_close_enough(e4, e246, delta) or \
+       not _is_close_enough(e6, e246, delta):
+        return False
+
+    # E3/E5要接近
+    e35 = (e3 + e5) / 2
+    if not _is_close_enough(e3, e35, delta) or \
+       not _is_close_enough(e5, e35, delta):
+        return False
+
+    return True
+
+
 class Finder(object):
     def __init__(self, klist):
         """
@@ -260,53 +348,67 @@ class Finder(object):
         else:
             plt.show()
 
-    def find_hs(self, delta=0.015):
+    def find_pattern(self, fncname, count, delta):
+        """
+        搜尋某種pattern (as defined by fncname)
+        :param fncname: name of the function
+        :param count: # of points in this pattern
+        :param delta:
+        :return: array of patterns, 每一個pattern是一個array of index
+        """
+        patterns = []
+        for i in range(len(self.pv_points)):
+            if fncname(self.X, self.pv_points, i, delta):
+                patterns.append([pt[0] for pt in self.pv_points[i:i+count]])
+        return patterns
+
+    def find_hs(self, delta=0.005):
         """
         搜尋 HS pattern (head-and-shoulder)
         :param delta: 頸線的誤差容忍值
         :return: array of patterns, 每一個pattern是一個array of index
         """
-        patterns = []
-        for i in range(len(self.pv_points)):
-            if _is_hs(self.X, self.pv_points, i, delta):
-                patterns.append([pt[0] for pt in self.pv_points[i:i+5]])
-        return patterns
+        return self.find_pattern(_is_hs, 5, delta)
 
-    def find_ihs(self, delta=0.015):
+    def find_ihs(self, delta=0.005):
         """
         搜尋 IHS pattern (inverted-head-and-shoulder)
         :param delta: 頸線的誤差容忍值
         :return: array of patterns, 每一個pattern是一個array of index
         """
-        patterns = []
-        for i in range(len(self.pv_points)):
-            if _is_ihs(self.X, self.pv_points, i, delta):
-                patterns.append([pt[0] for pt in self.pv_points[i:i+5]])
-        return patterns
+        return self.find_pattern(_is_ihs, 5, delta)
 
-    def find_double_bottom(self, delta=0.015):
-        """
-        搜尋 Double Bottom pattern
-        :param delta: E2/E4的誤差容忍值
-        :return: array of patterns, 每一個pattern是一個array of index
-        """
-        patterns = []
-        for i in range(len(self.pv_points)):
-            if _is_double_bottom(self.X, self.pv_points, i, delta):
-                patterns.append([pt[0] for pt in self.pv_points[i:i+5]])
-        return patterns
-
-    def find_double_top(self, delta=0.015):
+    def find_double_top(self, delta=0.005):
         """
         搜尋 Double Top pattern
         :param delta: E2/E4的誤差容忍值
         :return: array of patterns, 每一個pattern是一個array of index
         """
-        patterns = []
-        for i in range(len(self.pv_points)):
-            if _is_double_top(self.X, self.pv_points, i, delta):
-                patterns.append([pt[0] for pt in self.pv_points[i:i+5]])
-        return patterns
+        return self.find_pattern(_is_double_top, 5, delta)
+
+    def find_double_bottom(self, delta=0.005):
+        """
+        搜尋 Double Bottom pattern
+        :param delta: E2/E4的誤差容忍值
+        :return: array of patterns, 每一個pattern是一個array of index
+        """
+        return self.find_pattern(_is_double_bottom, 5, delta)
+
+    def find_triple_top(self, delta=0.005):
+        """
+        搜尋 Triple Top pattern
+        :param delta: E2/E4/E6 and E3/E5的誤差容忍值
+        :return: array of patterns, 每一個pattern是一個array of index
+        """
+        return self.find_pattern(_is_triple_top, 7, delta)
+
+    def find_triple_bottom(self, delta=0.005):
+        """
+        搜尋 Triple Bottom pattern
+        :param delta: E2/E4/E6 and E3/E5的誤差容忍值
+        :return: array of patterns, 每一個pattern是一個array of index
+        """
+        return self.find_pattern(_is_triple_bottom, 7, delta)
 
     @staticmethod
     def _identify_initial_pivot(X, up_thresh, down_thresh):
